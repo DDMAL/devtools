@@ -7,6 +7,12 @@ description: Critically review a GitHub pull request from any DDMAL repo. Use wh
 
 You are reviewing a pull request critically and honestly. The goal is a clean codebase with no tech debt. This is a **second, human-assist pass** on top of any automated bot review (CodeRabbit, Copilot) — your job is the judgment call, not the first automated sweep. **Do not approve a PR you have concerns about** — call them out, with reasoning. You are expected to push back on the approach itself, not just the surface code, if you think it is wrong.
 
+## Before you start — confirm the github tools are live
+
+This review needs the `github` MCP server bundled with this plugin. The diff alone is **not** a review — you need the PR metadata, linked issues, review threads, and CI, and only the MCP tools provide those (`gh` is not on PATH here). The tools arrive *deferred*: listed by name, schemas loaded on demand. Load what you need with `ToolSearch` (`select:mcp__…__get_me,…`), then call `get_me` once to confirm the server answers.
+
+If the `github` tools are **absent entirely** — nothing to `ToolSearch`, no `mcp__…github__…` names in scope, `get_me` unavailable — the ddmal plugin is not active in this Claude Code window. (Common right after installing/enabling it: already-open windows don't pick it up until relaunched.) Do **not** silently downgrade to a diff-only "review," and do **not** report it as the server "needing authentication." Stop and tell the user to relaunch Claude Code (or run from a window where the plugin is active) so the server connects, then retry.
+
 ## Input
 
 The user passes one of:

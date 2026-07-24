@@ -25,18 +25,32 @@ work with. Scopes: **Issues, Pull requests, Contents, Discussions, Metadata — 
 
 ### 2. Add the marketplace and install the plugin
 
-```text
-/plugin marketplace add DDMAL/devtools
-/plugin install ddmal@devtools
+In a terminal:
+
+```bash
+claude plugin marketplace add DDMAL/devtools
+claude plugin install ddmal@devtools --config github_pat=<YOUR_TOKEN> --scope user
 ```
 
-When the plugin enables, Claude Code **prompts you for the token** and stores it in your OS
-keychain (macOS) or `~/.claude/.credentials.json` (Windows/Linux) — never in a repo, never in
-your shell profile.
+`--config github_pat=…` stores your token in your OS keychain (macOS) or
+`~/.claude/.credentials.json` (Windows/Linux) — never in a repo, never in your shell profile. If
+you keep the token in an env var, use `--config github_pat="$YOUR_VAR"` so the value stays out of
+your shell history.
+
+> **Set the token on the _first_ install.** `claude plugin install` silently ignores `--config`
+> if the plugin is already installed — so if `github` won't connect later, run
+> `claude plugin uninstall ddmal@devtools` and install again with `--config`. (Or use the
+> interactive `/plugin install ddmal@devtools` inside a Claude Code session, which prompts you
+> for the token.)
 
 ### 3. Verify
 
-Run `/mcp` — the `github` server should show **connected**. Then try a real review:
+```bash
+claude mcp list
+```
+
+`plugin:ddmal:github` should show **✔ Connected**. Then try a real review in any Claude Code
+session (the VS Code extension is fine):
 
 ```text
 /ddmal:review-pr DDMAL/CantusDB#2118
@@ -78,6 +92,29 @@ owned by the people who work there, without bloating the shared plugin.
 See [`examples/review-rubric.cantusdb.md`](examples/review-rubric.cantusdb.md) for the format.
 A repo with no rubric still gets a solid generic review.
 
+**The federation contract.** A rubric only helps the lab if it's **committed** — one that lives
+only on your machine sharpens your own reviews and nobody else's. Two things to get right:
+
+1. **Commit it.** `.claude/review-rubric.md` is a shared, tracked file — unlike the rest of
+   `.claude/`, which is personal (settings, local skills). Add it and open a small PR.
+2. **Don't let `.gitignore` swallow it.** Most DDMAL repos ignore personal Claude config with a
+   directory-level rule (`.claude`, `.claude/`, or `.claude*`). That silently blocks the rubric
+   from ever being committed: the file exists locally, your own reviews pick it up, but it never
+   reaches teammates. Git won't re-include a file under an ignored directory, so switch to a
+   **contents-level ignore plus a negation**:
+
+   ```gitignore
+   # Personal Claude Code files
+   CLAUDE.local.md
+   .claude/*
+   # ...but ship the shared review rubric that /ddmal:review-pr federates from the repo
+   !.claude/review-rubric.md
+   ```
+
+   Also clear any stale `.claude/` line in `.git/info/exclude` — a local exclude re-introduces
+   the trap even when `.gitignore` is correct. Verify with `git add -n .claude/`: it should stage
+   **only** `review-rubric.md`.
+
 ---
 
 ## Recommended: always-visible context & usage
@@ -85,7 +122,7 @@ A repo with no rubric still gets a solid generic review.
 `/context`, `/usage`, and `/stats` give on-demand numbers. For an **always-on** view there are
 two levels, because context and usage come from different places:
 
-- **Context % — zero setup:** install the *Claude Context Bar* extension (below). It reads
+- **Context % — zero setup:** install the _Claude Context Bar_ extension (below). It reads
   Claude Code's own session files and shows a live context % in the status bar with no
   configuration. This is the "install once and always see it" option.
 - **Context % + 5-hour + weekly usage:** the quota numbers are **not** exposed to VS Code

@@ -48,8 +48,8 @@ To use it in CantusDB: copy this to `CantusDB/.claude/review-rubric.md` and fles
 - Migration reversion has bitten this project before — scrutinise any migration PR against
   those past failures.
 
-> TODO: "Known traps" still needs the specifics held in Liam's local auto-memories
-> (`project_image_link_retirement`, `project_reversion_for_mapping_commands`), which aren't in
-> the source skill — only referenced by name. A Claude Code session rooted **in CantusDB** has
-> those memories available and should inline them here (see the task brief that ships with this
-> example). Inlining is what makes the knowledge portable to the rest of the lab.
+> This file is a **trimmed seed** kept as a format reference. The fully-worked version — with the
+> `image_link` retirement (#1839) and reversion-in-mapping-commands (#1659) traps inlined as
+> concrete, checkable rules, plus the permission tiers and local verification commands — lives in
+> `CantusDB/.claude/review-rubric.md`. A rubric's specifics should be inlined like that (not
+> referenced by name) so the knowledge is portable to anyone reviewing the repo.
