@@ -1,0 +1,5 @@
+# Session handoffs — local by default. Commit one deliberately to hand off to a teammate.
+.handoffs/
+
+# OS / editor cruft
+.DS_Store

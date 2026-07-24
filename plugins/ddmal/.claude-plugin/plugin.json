@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "ddmal",
+  "description": "DDMAL developer tooling for Claude Code. Skills: /ddmal:review-pr, /ddmal:handoff, /ddmal:resume, /ddmal:commit. Backed by the GitHub MCP server.",
+  "author": { "name": "DDMAL" },
+  "homepage": "https://github.com/DDMAL/devtools",
+  "userConfig": {
+    "github_pat": {
+      "type": "string",
+      "title": "GitHub personal access token (read-only)",
+      "description": "Fine-grained PAT with Read access to DDMAL repos (Issues, Pull requests, Contents, Discussions, Metadata). Stored in your OS keychain (or ~/.claude/.credentials.json) — never written to a repo. Authenticates the GitHub MCP server.",
+      "sensitive": true,
+      "required": true
+    }
+  }
+}

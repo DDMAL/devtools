@@ -1,0 +1,7 @@
+{
+  "recommendations": [
+    "anthropic.claude-code",
+    "eamodio.gitlens",
+    "ezoosk.claude-context-bar"
+  ]
+}

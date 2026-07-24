@@ -1,0 +1,12 @@
+{
+  "name": "devtools",
+  "owner": { "name": "DDMAL" },
+  "description": "DDMAL lab developer tooling for Claude Code.",
+  "plugins": [
+    {
+      "name": "ddmal",
+      "source": "./plugins/ddmal",
+      "description": "DDMAL developer tooling: critical PR review, session handoffs, and Conventional Commits, backed by the GitHub MCP server."
+    }
+  ]
+}
