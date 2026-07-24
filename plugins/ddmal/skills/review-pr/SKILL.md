@@ -58,16 +58,14 @@ If the repo is not checked out, fall back to `pull_request_read` method `get_dif
 
 **Never review a diff in isolation** — read enough of the surrounding code to judge each change in context.
 
-## Step 5 — Load the target repo's review rubric (if any)
+## Step 5 — Load the repo's project context
 
-Load `.claude/review-rubric.md` from the **target** repo (the one the PR belongs to, not necessarily the one you're sitting in):
+A repo's own docs carry the project-specific gotchas a generic review would miss. Read whichever of these exist in the repo the PR belongs to and layer their checks on top of the generic rubric below:
 
-- If you are inside the target repo, read it from disk.
-- If you are reviewing a repo you are not checked out in, fetch it via `get_file_contents` (path `.claude/review-rubric.md`) so cross-repo reviews still pick it up.
+- **`CLAUDE.md`** (repo root) — the primary source. Architecture, conventions, framework quirks, migration/permission rules, deployment and ripple effects. Treat its "never / always / must / don't" statements as review gates.
+- **`.claude/review-rubric.md`** (optional) — some repos add a short list of extra review-time gates on top of `CLAUDE.md`.
 
-If present, **apply its checks on top of the generic rubric below** — it holds this project's specific gotchas (framework quirks, migration rules, naming traps, deployment ripple effects) that a generic review would miss.
-
-If absent, proceed with the generic rubric, and at the end of your review add a one-line note suggesting the team capture recurring gotchas in `.claude/review-rubric.md` so future reviews inherit them.
+If **neither** exists, run the generic rubric alone — do not invent project-specific rules.
 
 ## Step 6 — Evaluate (generic rubric)
 

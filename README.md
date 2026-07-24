@@ -81,39 +81,20 @@ session (the VS Code extension is fine):
 /ddmal:commit                           # draft a commit message for your staged changes
 ```
 
-### Per-repo review rubrics (how review-pr stays sharp across different stacks)
+### Project-specific review gates (how review-pr adapts per repo)
 
-The plugin ships a **stack-agnostic review engine**. Project-specific knowledge lives in each
-repo: `/ddmal:review-pr` looks for **`.claude/review-rubric.md`** in the repo being reviewed
-and layers its checks on top of the generic pass. That keeps Django/migration checks on
-CantusDB, ML/repro checks on the model repos, and data-quality checks on the datalake — each
-owned by the people who work there, without bloating the shared plugin.
+The plugin ships a **stack-agnostic review engine**. It picks up each repo's own gotchas from the
+repo being reviewed, in two places:
 
-See [`examples/review-rubric.cantusdb.md`](examples/review-rubric.cantusdb.md) for the format.
-A repo with no rubric still gets a solid generic review.
+- **`CLAUDE.md`** (repo root) — the primary source. `/ddmal:review-pr` reads it and treats its
+  "never / always / must / don't" statements as review gates, layered on the generic pass. Most
+  repos already have a `CLAUDE.md`, so there's usually nothing extra to set up.
+- **`.claude/review-rubric.md`** (optional) — drop one in if you want a short list of extra
+  review-time gates beyond what `CLAUDE.md` covers. It's a personal, local file; keep it or not as
+  you like. See [`examples/review-rubric.cantusdb.md`](examples/review-rubric.cantusdb.md) for the
+  shape.
 
-**The federation contract.** A rubric only helps the lab if it's **committed** — one that lives
-only on your machine sharpens your own reviews and nobody else's. Two things to get right:
-
-1. **Commit it.** `.claude/review-rubric.md` is a shared, tracked file — unlike the rest of
-   `.claude/`, which is personal (settings, local skills). Add it and open a small PR.
-2. **Don't let `.gitignore` swallow it.** Most DDMAL repos ignore personal Claude config with a
-   directory-level rule (`.claude`, `.claude/`, or `.claude*`). That silently blocks the rubric
-   from ever being committed: the file exists locally, your own reviews pick it up, but it never
-   reaches teammates. Git won't re-include a file under an ignored directory, so switch to a
-   **contents-level ignore plus a negation**:
-
-   ```gitignore
-   # Personal Claude Code files
-   CLAUDE.local.md
-   .claude/*
-   # ...but ship the shared review rubric that /ddmal:review-pr federates from the repo
-   !.claude/review-rubric.md
-   ```
-
-   Also clear any stale `.claude/` line in `.git/info/exclude` — a local exclude re-introduces
-   the trap even when `.gitignore` is correct. Verify with `git add -n .claude/`: it should stage
-   **only** `review-rubric.md`.
+A repo with neither still gets a solid generic review.
 
 ---
 
@@ -176,5 +157,6 @@ claude --plugin-dir ./plugins/ddmal      # load the plugin from disk
 claude plugin validate .
 ```
 
-Skills are portable engines (no project-specific knowledge); project-specific rules go in each
-repo's `.claude/review-rubric.md`. Keep it that way.
+Skills are portable engines (no project-specific knowledge); project-specific rules come from the
+repo being reviewed — its `CLAUDE.md` first, plus an optional local `.claude/review-rubric.md`.
+Keep it that way.
