@@ -1,7 +1,7 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "ddmal",
-  "description": "DDMAL developer tooling for Claude Code. Skills: /ddmal:review-pr, /ddmal:handoff, /ddmal:resume, /ddmal:commit. Backed by the GitHub MCP server.",
+  "description": "DDMAL developer tooling for Claude Code. Skills: /ddmal:review-pr, /ddmal:handoff, /ddmal:resume, /ddmal:commit, /ddmal:draft-pr. Backed by the GitHub MCP server.",
   "author": { "name": "DDMAL" },
   "homepage": "https://github.com/DDMAL/devtools",
   "userConfig": {

@@ -4,7 +4,7 @@ Lab-internal developer tooling for [Claude Code](https://code.claude.com), distr
 plugin through a private marketplace hosted in this repo. Install once and it works in
 **every** repo you open — no per-repo setup, and everyone pulls updates from one place.
 
-The `ddmal` plugin ships four skills, all backed by the official GitHub MCP server:
+The `ddmal` plugin ships five skills, all backed by the official GitHub MCP server:
 
 | Skill | What it does |
 | --- | --- |
@@ -12,6 +12,7 @@ The `ddmal` plugin ships four skills, all backed by the official GitHub MCP serv
 | `/ddmal:handoff` | Write a session handoff to disk so a fresh session can resume cleanly. |
 | `/ddmal:resume` | Pick up from the most recent handoff. |
 | `/ddmal:commit` | Draft a Conventional Commits message (you commit and push). |
+| `/ddmal:draft-pr` | Draft a PR and emit a pre-filled GitHub compare link (you click _Create_). |
 
 ---
 
@@ -79,6 +80,7 @@ session (the VS Code extension is fine):
 /ddmal:handoff                          # write a handoff before you run low on context
 /ddmal:resume                           # start a fresh session here to continue
 /ddmal:commit                           # draft a commit message for your staged changes
+/ddmal:draft-pr                         # draft a PR + get a pre-filled compare link to click
 ```
 
 ### Project-specific review gates (how review-pr adapts per repo)
