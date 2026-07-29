@@ -7,14 +7,14 @@ auto-memories that hold the gotchas we need; this devtools session does not.
 
 DDMAL now has a shared Claude Code plugin (`ddmal`, from the `DDMAL/devtools` marketplace).
 Its `/ddmal:review-pr` skill does a rigorous but **stack-agnostic** review. Project-specific
-knowledge is federated: the skill looks for **`.claude/review-rubric.md`** in the repo being
+knowledge is federated: the skill looks for **`REVIEW.md`** in the repo being
 reviewed and layers those checks on top of its generic pass. Your job is to write that file
 for CantusDB, so CantusDB reviews keep their Django/migration edge without that knowledge
 living in the shared plugin.
 
 ## Goal
 
-Create **`CantusDB/.claude/review-rubric.md`**, self-contained (no references to any
+Create **`CantusDB/REVIEW.md`**, self-contained (no references to any
 machine-local memory — inline the actual content).
 
 ## Steps
@@ -66,7 +66,7 @@ machine-local memory — inline the actual content).
    `CLAUDE.local.md`, or recurring themes in recent migration/permissions PRs. Keep it to
    things that generalise across PRs — not one-off notes.
 
-4. **Save** the result to `CantusDB/.claude/review-rubric.md` and confirm it contains no
+4. **Save** the result to `CantusDB/REVIEW.md` and confirm it contains no
    pointers to machine-local memory.
 
 ## While you're here (related, separate)

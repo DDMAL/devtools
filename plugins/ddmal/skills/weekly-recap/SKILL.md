@@ -1,6 +1,8 @@
 ---
-name: worknotes
-description: Write personal markdown work notes covering everything done since last Friday 9am Eastern (or a date you name). Use when the user wants a recap of the past week or a memory aid of recent work (e.g. "what have I been working on", "write my work notes", "/ddmal:worknotes", "/ddmal:worknotes 2026-07-20"). Reads commits, uncommitted changes, handoffs, and Claude Code sessions across all local repos.
+name: weekly-recap
+description: Write personal markdown work notes covering everything done since last Friday 9am Eastern (or a date you name). Use when the user wants a recap of the past week or a memory aid of recent work (e.g. "what have I been working on", "write my work notes", "/ddmal:weekly-recap", "/ddmal:weekly-recap 2026-07-20"). Reads commits, uncommitted changes, handoffs, and Claude Code sessions across all local repos.
+argument-hint: "[since Monday | 2026-07-20 | 2026-07-20 14:00]"
+allowed-tools: Bash(date:*) Bash(git rev-parse:*) Bash(mkdir:*) Bash(${CLAUDE_PLUGIN_ROOT}/scripts/worklog.sh *)
 ---
 
 # Write personal work notes
@@ -9,56 +11,59 @@ These notes are a **memory aid for the user, weeks from now** — after the deta
 They are not a status report and nobody else reads them. Write for a reader who has forgotten
 everything: name the thing, say what changed, say why it mattered, say where it stands.
 
-This is the opposite of `/ddmal:workday`. Nothing is compressed for space. Clarity wins.
+This is the opposite of `/ddmal:daily-recap`. Nothing is compressed for space. Clarity wins.
 
-## Step 1 — Work out the window
+## The window
 
-Default start: **the most recent Friday at 09:00 America/New_York**. Run on a Friday, it goes
-back a full week rather than a few hours — the point is to cover the week just worked.
+- Now: !`date '+%Y-%m-%d %H:%M %Z (%A)'`
+- Default start (most recent Friday, Eastern): !`back=$(( ( $(TZ=America/New_York date +%u) + 2 ) % 7 )); [ "$back" -eq 0 ] && back=7; TZ=America/New_York date -v-"${back}"d +%Y-%m-%d 2>/dev/null || TZ=America/New_York date -d "$back days ago" +%Y-%m-%d`
+- Clones scanned: !`dirname "$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")"`
 
-```bash
-back=$(( ( $(TZ=America/New_York date +%u) + 2 ) % 7 )); [ "$back" -eq 0 ] && back=7
-TZ=America/New_York date -v-"${back}"d +%Y-%m-%d 2>/dev/null \
-  || TZ=America/New_York date -d "$back days ago" +%Y-%m-%d
-```
+The default start is **the most recent Friday at 09:00 America/New_York**, resolved above —
+**never guess the current date.** Run on a Friday, it goes back a full week rather than a few
+hours, because the point is to cover the week just worked.
 
-If the user gave a date or a phrase ("since Monday", "since the 20th", "since 2026-07-20 14:00"),
-use that instead, at 09:00 unless they named a time. **Never guess the current date** — the
-command above derives it.
+If the user gave a date or a phrase in `$ARGUMENTS` ("since Monday", "since the 20th",
+"since 2026-07-20 14:00"), use that instead, at 09:00 unless they named a time.
 
-Unlike `/ddmal:workday`, this window is anchored to **Eastern**, not the local clock, so a
+Unlike `/ddmal:daily-recap`, this window is anchored to **Eastern**, not the local clock, so a
 week's notes cover the same span for everyone in the lab. Set `WORKLOG_TZ` to change that.
 
 State the window you settled on before you write anything, so a wrong default is caught early.
 
-## Step 2 — Collect the record
+## Step 1 — Collect the record
 
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/worklog.sh" --since 'YYYY-MM-DD 09:00'
 ```
 
-If `$CLAUDE_PLUGIN_ROOT` is unset, the script is two levels up from this skill's base
-directory: `<skill base dir>/../../scripts/worklog.sh`.
-
-It reports, for every repo in the folder holding your clones: your commits, files changed but
-not committed, handoff notes written in the window, and the prompts from your Claude Code
+It reports, for every repo in the folder shown above: your commits, files changed but not
+committed, handoff notes written in the window, and the prompts from your Claude Code
 sessions — including the work that never reached a commit.
 
 Read the session prompts closely. Questions the user asked, decisions they pushed back on, and
 things they abandoned are exactly what they won't remember, and commits never record them.
 
-## Step 3 — Add what GitHub knows
+> **Scope note.** The script reads Claude Code session history for *every* project on this
+> machine, not just the clones listed above — so unrelated or personal work can surface here
+> and end up in the saved file. Two ways to narrow it: pass `--roots DIR` (or set
+> `WORKLOG_ROOTS`, colon-separated) to limit which clones are scanned, and drop anything from
+> an unrelated project rather than writing it up. If the user seems surprised by what appeared,
+> tell them where it came from.
+
+## Step 2 — Add what GitHub knows
 
 Reviews, issue discussion, and PRs that others moved leave no local trace. If this plugin's
-`github` MCP tools are connected, call `get_me`, then search with `updated:>=<window start>`:
+`github` MCP tools are connected, call `mcp__plugin_ddmal_github__get_me`, then search with
+`updated:>=<window start>`:
 
-- `search_pull_requests` — `author:@me`, then `reviewed-by:@me`
-- `search_issues` — `commenter:@me`
+- `mcp__plugin_ddmal_github__search_pull_requests` — `author:@me`, then `reviewed-by:@me`
+- `mcp__plugin_ddmal_github__search_issues` — `commenter:@me`
 
 If the tools aren't connected, carry on with the local record and note at the bottom of the
 file that GitHub activity isn't included.
 
-## Step 4 — Write the notes
+## Step 3 — Write the notes
 
 Group by project. Within a project, run roughly chronologically, but merge related commits
 into one bullet — one bullet per *piece of work*, never one per commit.
@@ -98,7 +103,7 @@ Writing rules:
 **Only write what the record supports.** Where the evidence is thin (a session with prompts
 but no commits), say what was worked on and mark it as unfinished — don't infer an outcome.
 
-## Step 5 — Save and show
+## Step 4 — Save and show
 
 Write to `~/worknotes/<start>_to_<end>.md`, e.g. `~/worknotes/2026-07-24_to_2026-07-29.md`
 (override with `$WORKNOTES_DIR`). Create the folder if it doesn't exist. These are personal

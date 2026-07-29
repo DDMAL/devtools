@@ -1,44 +1,47 @@
 ---
 name: draft-pr
-description: Draft a pull request and emit a ready-to-click, pre-filled GitHub compare URL. Use when the user wants to open a PR for the current branch (e.g. "draft a PR", "open a pull request", "/ddmal:draft-pr"). Writes the title/body from the branch's commits and diff and hands over a link that lands on GitHub's Create-PR form with everything filled in — it does NOT create the PR; the human clicks *Create*.
+description: Draft a pull request and emit a ready-to-click, pre-filled GitHub compare URL. Use when the user wants to open a PR for the current branch (e.g. "draft a PR", "open a pull request", "/ddmal:draft-pr"). Writes the title/body from the branch's commits and diff and hands over a link that lands on GitHub's Create-PR form with everything filled in — it does NOT create the PR or push; the human does both.
+allowed-tools: Bash(git branch:*) Bash(git log:*) Bash(git diff:*) Bash(git remote:*) Bash(git rev-parse:*) Bash(git symbolic-ref:*) Bash(git status:*) Bash(${CLAUDE_PLUGIN_ROOT}/scripts/prefill-url.sh *)
 ---
 
 # Draft a pull request
 
 Turn the current branch into a PR the user can create with one click. You draft the title and body from the branch's commits and diff, then hand over a **pre-filled GitHub compare URL** — the link opens GitHub's Create-pull-request form with the title, body, and options already populated, and the human reviews and clicks **Create pull request**.
 
-**You do not create the PR.** This skill is read-only against GitHub — it never uses the plugin's GitHub PAT to write. It mirrors `/ddmal:commit`: it drafts and hands over, the human executes. The one thing it *does* do is push the branch to the remote (via the user's own git credentials, after confirming), because GitHub can't compute the compare diff for a branch it hasn't seen.
+**You mutate nothing.** You don't create the PR, and you don't push. This skill only reads git, writes a scratch file inside the git dir, and prints a link. It mirrors `/ddmal:commit`: it drafts and hands over, the human executes.
 
-## Step 1 — Work out the branches and the repo
+## Branch state
 
-```
-git branch --show-current          # head = the branch you're PR-ing
-git remote get-url origin          # to parse owner/repo
-git symbolic-ref --short refs/remotes/origin/HEAD   # e.g. origin/main → base = main
-```
+- Git dir: !`git rev-parse --path-format=absolute --git-dir`
+- Head branch: !`git branch --show-current`
+- Origin: !`git remote get-url origin`
+- Default branch: !`git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || echo "(unset — assume main)"`
+- Upstream: !`git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null || echo "(none — this branch has never been pushed)"`
+- Commits not yet pushed: !`git log --oneline '@{u}..HEAD' 2>/dev/null || echo "(no upstream to compare against)"`
+- Commits vs. default branch: !`git log --oneline origin/HEAD..HEAD 2>/dev/null || echo "(cannot resolve origin/HEAD)"`
 
-- **head** = the current branch. **If head is the default branch itself** (`main`/`master`), stop — there's nothing to PR. Ask the user to switch to (or create) a feature branch first.
-- **base** = the repo's default branch (strip the `origin/` prefix from the `symbolic-ref` output; fall back to `main` if it isn't set).
+## Step 1 — Check the branch is PR-able
+
+From the state above:
+
+- **head** = the current branch. **If head is the default branch** (`main`/`master`), stop — there's nothing to PR. Ask the user to switch to (or create) a feature branch first.
+- **base** = the default branch, with the `origin/` prefix stripped; fall back to `main` if it's unset.
 - **owner/repo** — parse from the origin URL. Both forms appear: `git@github.com:DDMAL/CantusDB.git` (SSH) and `https://github.com/DDMAL/CantusDB.git` (HTTPS). Strip the host prefix and the trailing `.git` → `DDMAL/CantusDB`. If origin isn't a GitHub remote (or there's no remote), ask the user for `owner/repo`.
 
-> ⚠️ **SESEMMI (and any auto-deploy-on-merge repo):** a merge to `main` auto-deploys. This skill never pushes `main` — it pushes your *feature* branch — so drafting is safe. Just never run it while sitting on `main`, and remember the human's click-to-merge is the deploy trigger.
+## Step 2 — Require the branch to be on the remote
 
-## Step 2 — Make sure the head branch is on the remote
+GitHub computes the compare diff server-side, so the head branch **must exist on origin** and be current, or the pre-filled form comes up empty. **You never push** — pushing is the human's call, and on an auto-deploy repo it's the first step of a chain that ends in production.
 
-GitHub computes the compare diff server-side, so the head branch **must exist on origin** and be current, or the pre-filled form comes up empty.
-
-```
-git log origin/<head>..<head> --oneline   # commits not yet pushed (fails if origin/<head> doesn't exist → not pushed at all)
-```
-
-- **Already pushed and up to date** → nothing to do; go to Step 3.
-- **Not pushed, or local is ahead** → show the user exactly which commits will go up, then **confirm before pushing**. On confirmation:
+- **Upstream exists and there are no unpushed commits** → good, continue to Step 3.
+- **No upstream, or commits listed as not yet pushed** → stop. Show the user which commits are missing from the remote and hand them the command:
 
   ```
   git push -u origin <head>
   ```
 
-  This uses **the user's own git credentials** — not the plugin's read-only PAT (git push doesn't touch the MCP token at all). If the push is declined, stop and hand the user the command to run themselves; the URL is useless until the branch is on origin.
+  Tell them to run it and then re-run `/ddmal:draft-pr`. Do not build the URL — it is useless until the remote has the branch, and a stale link produces an empty or wrong diff on GitHub.
+
+> ⚠️ **SESEMMI (and any auto-deploy-on-merge repo):** a merge to `main` auto-deploys. This skill touches nothing, so drafting is always safe. Remember that the human's click-to-merge is the deploy trigger.
 
 ## Step 3 — Draft the title and body
 
@@ -58,38 +61,28 @@ git diff <base>...<head>
 
 ## Step 4 — Build the pre-filled compare URL
 
-The target form is GitHub's compare view with query params:
+Write the title and body to files inside the git dir, then let the bundled script do the URL encoding and the length check:
 
-```
-https://github.com/<owner>/<repo>/compare/<base>...<head>?expand=1&title=<url-encoded-title>&body=<url-encoded-body>
-```
-
-`expand=1` opens the form directly. Optional extra params: `&labels=a,b`, `&assignees=user`, `&reviewers=user` — add them only if the user asked. **Title and body must be URL-encoded.** Don't hand-encode; write the two fields to files and let a tool do it. A reliable recipe (works on macOS):
-
-```
-# after writing the title to .git/PR_TITLE and the body to .git/PR_BODY
-python3 - <<'PY'
-import urllib.parse, pathlib
-base, head, owner_repo = "<base>", "<head>", "<owner>/<repo>"
-title = pathlib.Path(".git/PR_TITLE").read_text().strip()
-body  = pathlib.Path(".git/PR_BODY").read_text()
-q = urllib.parse.urlencode({"expand": "1", "title": title, "body": body}, quote_via=urllib.parse.quote)
-url = f"https://github.com/{owner_repo}/compare/{base}...{head}?{q}"
-print(f"len={len(url)}")
-print(url)
-PY
+```bash
+"${CLAUDE_PLUGIN_ROOT}/scripts/prefill-url.sh" pr \
+  --repo <owner>/<repo> --base <base> --head <head> \
+  --title-file "<git-dir>/PR_TITLE" --body-file "<git-dir>/PR_BODY"
 ```
 
-> **Length caveat (~8k chars).** Browsers and GitHub choke on URLs past roughly 8,000 characters. If the printed `len=` is near or over that, keep the *linked* body tight — a short summary plus "full description below" — and hand the full body to the user separately (see Step 5) to paste into the form. A long body is the only thing that blows the budget; the rest of the URL is tiny.
+Use the **Git dir** path resolved at the top — not a literal `.git/`, which is a *file* rather than a directory in a worktree or submodule. The script prints the URL on stdout and `ok: <n> chars` on stderr.
+
+Add `--param labels=a,b`, `--param assignees=user`, or `--param reviewers=user` only if the user asked for them.
+
+**If the script reports `OVER LIMIT`** (past ~8,000 characters, where browsers and GitHub start returning 414), shorten the *linked* body to a summary plus "full description below", rebuild, and give the full body to the user separately in Step 5 to paste in.
 
 ## Step 5 — Hand it over
 
-- Write the final title and body to **`.git/PR_DRAFT`** (inside `.git/`, so it's never tracked), same as `/ddmal:commit` writes `.git/COMMIT_DRAFT`.
+- Write the final title and body to **`<git-dir>/PR_DRAFT`**, same as `/ddmal:commit` writes `COMMIT_DRAFT`.
 - In chat: print the **compare URL** as a clickable link, and print the **title + body** in a code block so the user can read (and, if the URL was trimmed for length, paste) it.
 - Tell the user plainly: **click the link, review the pre-filled form on GitHub, and click _Create pull request_.** You have not created it.
 
 ## Operating notes
 
-- **Read-only against GitHub.** The plugin's PAT is never used to write. The only mutation is the branch push in Step 2, with the user's own credentials and only after they confirm.
+- **Zero mutations.** No PR is created, nothing is pushed, and the GitHub MCP server is pinned read-only, so no write tool exists to reach for. The only file written is a scratch draft inside the git dir.
 - **Don't guess owner/repo or base** — derive them from git; ask if git can't tell you.
 - **Scope boundary.** PR *creation* and *new issues* both have pre-fill URLs, which is why this skill can exist. PR *inline review comments* do not — that's why `/ddmal:review-pr` stays chat-only.

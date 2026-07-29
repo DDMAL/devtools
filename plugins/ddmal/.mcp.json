@@ -3,7 +3,11 @@
     "github": {
       "type": "http",
       "url": "https://api.githubcopilot.com/mcp/",
-      "headers": { "Authorization": "Bearer ${user_config.github_pat}" }
+      "headers": {
+        "Authorization": "Bearer ${user_config.github_pat}",
+        "X-MCP-Readonly": "true",
+        "X-MCP-Toolsets": "context,repos,issues,pull_requests"
+      }
     }
   }
 }

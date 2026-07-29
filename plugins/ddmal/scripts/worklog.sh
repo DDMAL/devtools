@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Collect a factual record of recent work for the /ddmal:workday and
-# /ddmal:worknotes skills. Prints plain text; interprets nothing.
+# Collect a factual record of recent work for the /ddmal:daily-recap and
+# /ddmal:weekly-recap skills. Prints plain text; interprets nothing.
 #
 #   worklog.sh --since "2026-07-24 09:00" [--tz local] [--roots DIR]
 #
@@ -14,9 +14,14 @@ set -uo pipefail
 SINCE=""
 TZ_NAME="${WORKLOG_TZ:-America/New_York}"
 ROOTS=()
-MAX_PROMPTS=14      # per Claude Code session
-MAX_SESSIONS=40
-PROMPT_WIDTH=160
+# Caps keep the output readable for the skill that consumes it. A session's first
+# prompts state the intent; later ones are follow-ups, so the head of the list is
+# what a recap needs. Sessions are taken newest-first, so hitting a cap drops the
+# oldest work in the window rather than an arbitrary slice of it.
+MAX_PROMPTS=14      # per session — roughly where prompts stop adding new topics
+MAX_SESSIONS=40     # a week of heavy use; beyond this the recap can't use it all
+PROMPT_WIDTH=160    # one or two terminal lines: enough to see the ask, not the detail
+MAX_DIRTY=60        # per repo, from `git status`; a dirtier tree than this is noise
 
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -114,7 +119,7 @@ for d in ${REPOS[@]+"${REPOS[@]}"}; do
     path="$d${f%/}"
     mt=$(stat -f %m "$path" 2>/dev/null || stat -c %Y "$path" 2>/dev/null)
     [ -n "$mt" ] && [ "$mt" -ge "$EPOCH" ] && dirty="$dirty  $line"$'\n'
-  done < <(git -C "$d" status --porcelain 2>/dev/null | head -60)
+  done < <(git -C "$d" status --porcelain 2>/dev/null | head -"$MAX_DIRTY")
   if [ -n "$dirty" ]; then
     FOUND_DIRTY=1
     printf -- '-- %s\n%s' "$(basename "$d")" "$dirty"
@@ -180,7 +185,14 @@ if [ -d "$PROJECTS" ] && command -v jq >/dev/null 2>&1; then
     else
       printf '%s\n' "$block"
     fi
-  done < <(find "$PROJECTS" -name '*.jsonl' -newermt "$SINCE" 2>/dev/null | head -"$MAX_SESSIONS")
+    # `find` emits directory order, so sort by mtime before capping — otherwise
+    # MAX_SESSIONS drops an arbitrary slice and can lose today's work.
+  done < <(find "$PROJECTS" -name '*.jsonl' -newermt "$SINCE" 2>/dev/null \
+             | while IFS= read -r p; do
+                 m=$(stat -f %m "$p" 2>/dev/null || stat -c %Y "$p" 2>/dev/null)
+                 [ -n "$m" ] && printf '%s\t%s\n' "$m" "$p"
+               done \
+             | sort -rn | head -"$MAX_SESSIONS" | cut -f2-)
   if [ -n "$STAGE" ]; then
     for b in $(ls "$STAGE" 2>/dev/null | sort -n); do cat "$STAGE/$b"; done
     rm -rf "$STAGE"

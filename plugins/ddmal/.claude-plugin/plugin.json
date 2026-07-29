@@ -1,14 +1,14 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "ddmal",
-  "description": "DDMAL developer tooling for Claude Code. Skills: /ddmal:review-pr, /ddmal:handoff, /ddmal:resume, /ddmal:commit, /ddmal:draft-pr, /ddmal:draft-issue, /ddmal:workday, /ddmal:worknotes. Backed by the GitHub MCP server.",
+  "description": "DDMAL developer tooling for Claude Code. Skills: /ddmal:review-pr, /ddmal:handoff, /ddmal:resume, /ddmal:commit, /ddmal:draft-pr, /ddmal:draft-issue, /ddmal:daily-recap, /ddmal:weekly-recap. Backed by the GitHub MCP server, pinned read-only.",
   "author": { "name": "DDMAL" },
   "homepage": "https://github.com/DDMAL/devtools",
   "userConfig": {
     "github_pat": {
       "type": "string",
       "title": "GitHub personal access token (read-only)",
-      "description": "Fine-grained PAT with Read access to DDMAL repos (Issues, Pull requests, Contents, Discussions, Metadata). Stored in your OS keychain (or ~/.claude/.credentials.json) — never written to a repo. Authenticates the GitHub MCP server.",
+      "description": "Fine-grained PAT with Read access to DDMAL repos (Issues, Pull requests, Contents, Discussions, Metadata). Stored in your OS keychain (or ~/.claude/.credentials.json) — never written to a repo. Authenticates the GitHub MCP server, which is additionally pinned read-only via X-MCP-Readonly, so a broader token still cannot write.",
       "sensitive": true,
       "required": true
     }

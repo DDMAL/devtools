@@ -1,13 +1,17 @@
 # Example: CantusDB review rubric
 
 This is a **seed example** of a repo-local review rubric. `/ddmal:review-pr` looks for
-`.claude/review-rubric.md` in the repo being reviewed and layers its checks on top of the
+`REVIEW.md` at the root of the repo being reviewed and layers its checks on top of the
 generic review. Drop a file like this into each repo that has recurring, project-specific
 gotchas; the generic review already covers scope creep, tests, security, and "does it fix
 the issue".
 
-To use it in CantusDB: copy this to `CantusDB/.claude/review-rubric.md` and flesh out the
-"Known traps" section with the specifics (see the note at the bottom).
+`REVIEW.md` is also the file Anthropic's managed Code Review service reads, so one rubric
+serves both `/ddmal:review-pr` and the GitHub-side reviewer. Keep it to rules that change
+review behaviour; general project context belongs in `CLAUDE.md`.
+
+To use it in CantusDB: copy this to `CantusDB/REVIEW.md` and flesh out the "Known traps"
+section with the specifics (see the note at the bottom).
 
 ---
 
@@ -51,5 +55,5 @@ To use it in CantusDB: copy this to `CantusDB/.claude/review-rubric.md` and fles
 > This file is a **trimmed seed** kept as a format reference. The fully-worked version — with the
 > `image_link` retirement (#1839) and reversion-in-mapping-commands (#1659) traps inlined as
 > concrete, checkable rules, plus the permission tiers and local verification commands — lives in
-> `CantusDB/.claude/review-rubric.md`. A rubric's specifics should be inlined like that (not
+> `CantusDB/REVIEW.md`. A rubric's specifics should be inlined like that (not
 > referenced by name) so the knowledge is portable to anyone reviewing the repo.

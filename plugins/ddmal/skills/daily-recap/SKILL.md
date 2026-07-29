@@ -1,6 +1,8 @@
 ---
-name: workday
-description: Summarize today's work as 3-4 one-line bullets to paste into Workday. Use when the user asks what they worked on today or wants their Workday entry (e.g. "what did I work on today", "workday summary", "/ddmal:workday", "/ddmal:workday since 9am"). The day runs 4am to 4am in local time, so late-night work counts toward the session it belongs to; the user can name a different start time or day. Reads commits, uncommitted changes, and Claude Code sessions across all local repos, then writes the shortest honest summary that fits.
+name: daily-recap
+description: Summarize today's work as 3-4 one-line bullets to paste into Workday. Use when the user asks what they worked on today or wants their Workday entry (e.g. "what did I work on today", "workday summary", "/ddmal:daily-recap", "/ddmal:daily-recap since 9am"). The day runs 4am to 4am in local time, so late-night work counts toward the session it belongs to; the user can name a different start time or day. Reads commits, uncommitted changes, and Claude Code sessions across all local repos, then writes the shortest honest summary that fits.
+argument-hint: "[since 9am | yesterday | 2026-07-27 14:00]"
+allowed-tools: Bash(date:*) Bash(git rev-parse:*) Bash(${CLAUDE_PLUGIN_ROOT}/scripts/worklog.sh *)
 ---
 
 # Write today's Workday entry
@@ -16,36 +18,28 @@ Target shape:
 - Refining ddmal/devtools plugin
 ```
 
-## Step 1 — Pick the window
+## The window
+
+- Now: !`date '+%Y-%m-%d %H:%M %Z (%A)'`
+- Default start date (04:00 → 04:00, local): !`CUT=04; if [ "$(date +%H)" -lt "$CUT" ]; then date -v-1d +%Y-%m-%d 2>/dev/null || date -d yesterday +%Y-%m-%d; else date +%Y-%m-%d; fi`
 
 A workday runs from **04:00 to 04:00, in this computer's timezone** — never a hardcoded zone.
-Work done at 1am belongs to the day you were still working, so before 4am the window opens at
-04:00 *yesterday*, not on an empty new day.
+Work done at 1am belongs to the day you were still working, so before 4am the default start
+date above is *yesterday*, not an empty new day. **Never assume the date or the hour** — both
+are resolved above.
 
-```bash
-CUT=04
-if [ "$(date +%H)" -lt "$CUT" ]; then
-  DAY=$(date -v-1d +%Y-%m-%d 2>/dev/null || date -d yesterday +%Y-%m-%d)   # still last night
-else
-  DAY=$(date +%Y-%m-%d)
-fi
-echo "$DAY $CUT:00"
-```
-
-**Never assume the date or the hour** — the command above derives both.
-
-The user can override the start, and may give a time, a day, or both:
+The user can override the start via `$ARGUMENTS`, and may give a time, a day, or both:
 
 | They say | Window starts |
 | --- | --- |
-| *(nothing)* | `$DAY 04:00` from above |
-| `9am`, `14:00`, `since lunch` | that time, on `$DAY` |
+| *(nothing)* | the default start date above, at `04:00` |
+| `9am`, `14:00`, `since lunch` | that time, on the default start date |
 | `yesterday`, `Monday`, `2026-07-27` | 04:00 on that day |
 | `yesterday 2pm`, `2026-07-27 14:00` | exactly that |
 
-If a bare time hasn't happened yet on `$DAY`, they mean last night — step the date back a day.
+If a bare time hasn't happened yet today, they mean last night — step the date back a day.
 
-## Step 2 — Collect the record
+## Step 1 — Collect the record
 
 ```bash
 "${CLAUDE_PLUGIN_ROOT}/scripts/worklog.sh" --tz local --since 'YYYY-MM-DD HH:MM'
@@ -53,25 +47,22 @@ If a bare time hasn't happened yet on `$DAY`, they mean last night — step the 
 
 `--tz local` is what keeps this on the user's own clock.
 
-If `$CLAUDE_PLUGIN_ROOT` is unset, the script is two levels up from this skill's base
-directory: `<skill base dir>/../../scripts/worklog.sh`.
-
 It reports, for every repo in the folder holding your clones: your commits, files you changed
 but haven't committed, handoff notes, and the prompts from your Claude Code sessions. Sessions
 matter most — they capture work that never reached a commit.
 
-## Step 3 — Add what GitHub knows (optional)
+## Step 2 — Add what GitHub knows (optional)
 
 Reviews and issue comments leave no local trace. If this plugin's `github` MCP tools are
-connected, call `get_me`, then search with `updated:>=<window date>`:
+connected, call `mcp__plugin_ddmal_github__get_me`, then search with `updated:>=<window date>`:
 
-- `search_pull_requests` — `author:@me`, then `reviewed-by:@me`
-- `search_issues` — `commenter:@me`
+- `mcp__plugin_ddmal_github__search_pull_requests` — `author:@me`, then `reviewed-by:@me`
+- `mcp__plugin_ddmal_github__search_issues` — `commenter:@me`
 
 **If the tools aren't available, skip this step silently.** The local record alone is enough.
 Don't tell the user about missing tools unless they ask why something is absent.
 
-## Step 4 — Compress to 3-4 lines
+## Step 3 — Compress to 3-4 lines
 
 Group by **project or theme, never by commit.** Six commits in one repo are one bullet.
 
@@ -94,7 +85,7 @@ fold the small ones into the nearest bullet or drop them; a fifth line is not an
 **Only claim what the record supports.** If nothing landed in a repo, "Working on X" is honest
 and "Fixed X" is not.
 
-## Step 5 — Hand it over
+## Step 4 — Hand it over
 
 Print **only the bullets** in a plain code block, ready to select and paste — nothing inside
 it but the lines. Above it, put one short line naming the window you used (`Wed 29 Jul, 4am →
@@ -102,3 +93,8 @@ now`) so a wrong default gets caught immediately.
 
 If you dropped or merged real work to fit, add one short sentence *after* the block saying
 what you left out, so the user can swap it in if they'd rather.
+
+## Related
+
+`/ddmal:weekly-recap` is the opposite skill: a full-detail markdown file covering the week,
+written for the user to read weeks later rather than to paste into a form.
