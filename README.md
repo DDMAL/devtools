@@ -38,24 +38,29 @@ _private_ repo? Set the resource owner to that repo's org/owner instead, select 
 
 ### 2. Install
 
-Install from a terminal. First read your token into a variable **without it hitting your shell
-history** — `read -rs` takes the paste silently (nothing is echoed):
+**Default — in a Claude Code session.** In the VS Code chat panel or an interactive `claude`
+session, run:
 
-```bash
-read -rs GITHUB_PAT     # paste your token, then press Enter
+```text
+/plugin marketplace add DDMAL/devtools
+/plugin install ddmal@devtools
 ```
 
-Then add the marketplace and install, passing that variable (never the raw token):
+`/plugin install` pops up a prompt for your token, so it never touches your shell history.
+
+**Fallback — from a terminal,** if `/plugin` isn't available (e.g. a headless or older session).
+Read the token in silently first so it stays out of your shell history:
 
 ```bash
+read -rs GITHUB_PAT     # paste your token, then press Enter (nothing is echoed)
 claude plugin marketplace add DDMAL/devtools
 claude plugin install ddmal@devtools --config github_pat="$GITHUB_PAT" --scope user
 ```
 
-Claude Code stores the token in your OS keychain (or `~/.claude/.credentials.json`), never in the
-repo. **Set it on the _first_ install** — `install` silently ignores `--config` if the plugin is
-already present, so if the server won't connect later, run `claude plugin uninstall ddmal@devtools`
-and reinstall.
+Either way, Claude Code stores the token in your OS keychain (or `~/.claude/.credentials.json`),
+never in the repo. **Set it on the _first_ install** — `install` silently ignores `--config` if the
+plugin is already present, so if the server won't connect later, run
+`claude plugin uninstall ddmal@devtools` and reinstall.
 
 ### 3. Verify
 
