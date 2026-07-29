@@ -29,40 +29,33 @@ The skills read PRs, issues, and code through the GitHub MCP server, which needs
 **[github.com/settings/personal-access-tokens/new](https://github.com/settings/personal-access-tokens/new)**
 with **Read-only** access:
 
-- **Resource owner:** DDMAL — an org owner may need to approve the token before it works.
-- **Repository access:** the repos you review (or all DDMAL repos).
-- **Permissions (all Read):** Issues, Pull requests, Contents, Discussions, Metadata.
+- **Resource owner:** your own GitHub account — no org approval to wait on.
+- **Repository access:** _Public repositories (read-only)_ — covers the public DDMAL repos, with no extra permissions to configure.
 
-Read-only is deliberate — reviews are posted in chat, never written back to GitHub.
+Read-only is deliberate — reviews are posted in chat, never written back to GitHub. (Reviewing a
+_private_ repo? Set the resource owner to that repo's org/owner instead, select the repo, and grant
+**Issues, Pull requests, Contents, Metadata → Read**.)
 
 ### 2. Install
 
-Add the marketplace, then install the plugin. Claude Code stores your token in your OS keychain
-(or `~/.claude/.credentials.json`), never in the repo — but **avoid typing the raw token as a
-command-line argument**, since that lands in your shell history. Two clean ways to hand it over:
-
-**Recommended — let it prompt you.** In a Claude Code session (VS Code chat panel or an interactive
-`claude`), run:
-
-```text
-/plugin marketplace add DDMAL/devtools
-/plugin install ddmal@devtools
-```
-
-`/plugin install` prompts you to paste the token, so it never touches your shell history.
-
-**Or from the terminal,** passing the token via an **env var** (not the literal token) so history
-only records the variable name:
+Install from a terminal. First read your token into a variable **without it hitting your shell
+history** — `read -rs` takes the paste silently (nothing is echoed):
 
 ```bash
-export GITHUB_PAT=github_pat_xxx        # or keep it in ~/.bash_profile / ~/.zshrc
+read -rs GITHUB_PAT     # paste your token, then press Enter
+```
+
+Then add the marketplace and install, passing that variable (never the raw token):
+
+```bash
 claude plugin marketplace add DDMAL/devtools
 claude plugin install ddmal@devtools --config github_pat="$GITHUB_PAT" --scope user
 ```
 
-**Set the token on the _first_ install** — `install` silently ignores `--config` if the plugin is
+Claude Code stores the token in your OS keychain (or `~/.claude/.credentials.json`), never in the
+repo. **Set it on the _first_ install** — `install` silently ignores `--config` if the plugin is
 already present, so if the server won't connect later, run `claude plugin uninstall ddmal@devtools`
-and install again.
+and reinstall.
 
 ### 3. Verify
 
