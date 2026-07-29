@@ -49,10 +49,16 @@ session, run:
 `/plugin install` pops up a prompt for your token, so it never touches your shell history.
 
 **Fallback — from a terminal,** if `/plugin` isn't available (e.g. a headless or older session).
-Read the token in silently first so it stays out of your shell history:
+Read your token in first — run this line **on its own**, then paste the token and press Enter. The
+line stays blank while it waits (input is hidden), and the value never enters your shell history:
 
 ```bash
-read -rs GITHUB_PAT     # paste your token, then press Enter (nothing is echoed)
+read -rs GITHUB_PAT
+```
+
+Then add the marketplace and install:
+
+```bash
 claude plugin marketplace add DDMAL/devtools
 claude plugin install ddmal@devtools --config github_pat="$GITHUB_PAT" --scope user
 ```
