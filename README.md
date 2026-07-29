@@ -4,7 +4,7 @@ Lab-internal developer tooling for [Claude Code](https://code.claude.com), distr
 plugin through a marketplace hosted in this repo. Install once and it works in **every** repo you
 open — no per-repo setup, and everyone pulls updates from one place.
 
-The `ddmal` plugin ships six skills, all backed by the official GitHub MCP server:
+The `ddmal` plugin ships eight skills, all backed by the official GitHub MCP server:
 
 | Skill | What it does |
 | --- | --- |
@@ -14,6 +14,8 @@ The `ddmal` plugin ships six skills, all backed by the official GitHub MCP serve
 | `/ddmal:commit` | Draft a Conventional Commits message (you commit and push). |
 | `/ddmal:draft-pr` | Draft a PR and emit a pre-filled GitHub compare link (you click _Create_). |
 | `/ddmal:draft-issue` | Draft a bug/feature issue and emit a pre-filled new-issue link (you click _Submit_). |
+| `/ddmal:workday` | Summarize today's work as 3–4 one-line bullets to paste into Workday. |
+| `/ddmal:worknotes` | Personal markdown notes on everything done since last Friday 9am. |
 
 ---
 
@@ -92,7 +94,27 @@ You want `plugin:ddmal:github … ✔ Connected`. Then, **in Claude Code** (not 
 /ddmal:commit                           # draft a commit message for your staged changes
 /ddmal:draft-pr                         # draft a PR + get a pre-filled compare link to click
 /ddmal:draft-issue                      # draft a bug/feature + get a pre-filled new-issue link
+/ddmal:workday                          # 3–4 lines for Workday, covering today
+/ddmal:workday since 9am                # …or from a time or day you name
+/ddmal:worknotes                        # personal notes since last Friday 9am ET
+/ddmal:worknotes 2026-07-20             # …or since a date you name
 ```
+
+### Where the work summaries come from
+
+`/ddmal:workday` and `/ddmal:worknotes` both run
+[`plugins/ddmal/scripts/worklog.sh`](plugins/ddmal/scripts/worklog.sh), which scans **every
+clone in the folder holding this repo** — your commits, files you changed but haven't
+committed, `.handoffs/` notes, and your Claude Code session history — over a time window. It
+reads only; it prints a plain-text record and the skill does the interpreting.
+
+- **`/ddmal:workday` runs 4am → 4am in your computer's timezone**, so a session that goes past
+  midnight still lands on the day you were working. Name a start yourself to override it.
+- `/ddmal:worknotes` anchors to **Eastern** instead, so a week means the same span for everyone.
+  Set `WORKLOG_TZ` to change that.
+- Repos somewhere else? Set `WORKLOG_ROOTS` (colon-separated) or pass `--roots DIR`.
+- `/ddmal:worknotes` writes to `~/worknotes/` (override with `$WORKNOTES_DIR`) — outside every
+  repo, since the notes are personal and span all of them.
 
 ### How review-pr adapts per repo
 
