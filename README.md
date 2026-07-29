@@ -92,33 +92,12 @@ A repo with neither still gets a solid generic review.
 
 ---
 
-## Recommended: always-on context & usage
-
-`/context`, `/usage`, and `/stats` give numbers on demand. For an always-on view:
-
-- **Context % (zero setup):** install the **Claude Context Bar** extension (below) — a live context
-  % in the status bar, no configuration.
-- **Context % + 5-hour + weekly usage:** these quotas live only in the status-line payload, so an
-  always-on view needs a **status line** (terminal only):
-  1. Copy [`scripts/statusline.sh`](scripts/statusline.sh) to `~/.claude/statusline.sh` and
-     `chmod +x` it.
-  2. Add to `~/.claude/settings.json`:
-     `{ "statusLine": { "type": "command", "command": "bash ~/.claude/statusline.sh" } }`
-  3. Run Claude Code in a terminal (VS Code's integrated terminal is fine). `npx ccusage statusline`
-     is a zero-maintenance alternative.
-
-The status line doesn't render in the VS Code side panel yet, so panel users should rely on `/usage`
-plus the context extension.
-
 ## Recommended VS Code extensions
 
 Opening this repo prompts VS Code to install these (see
 [`.vscode/extensions.json`](.vscode/extensions.json)):
 
 - **Claude Code** (`anthropic.claude-code`) — the extension itself.
-- **GitLens** (`eamodio.gitlens`) — inline blame, history, and PR context.
-- **Claude Context Bar** (`ezoosk.claude-context-bar`) — live context % in the status bar (context
-  only, not usage quotas; not open-source).
 
 Stack-specific extensions belong in each project's own `.vscode/extensions.json`, not here.
 
