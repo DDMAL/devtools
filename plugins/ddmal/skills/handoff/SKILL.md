@@ -1,6 +1,6 @@
 ---
 name: handoff
-description: Write a session handoff document to disk so a fresh session (or a teammate) can resume this work without re-reading the transcript. Use when the user is wrapping up, running low on context, or asks for a handoff (e.g. "write a handoff", "/ddmal:handoff"). Captures goal, state, decisions, verification, git state, and next steps into a `.handoffs/` file.
+description: Write a session handoff document to disk so a fresh session or another agent can resume this work without re-reading the transcript. Use when the user is wrapping up, running low on context, or asks for a handoff (e.g. "write a handoff", "/ddmal:handoff"). Captures goal, state, decisions, verification, git state, and next steps into a `.handoffs/` file.
 ---
 
 # Write a session handoff
@@ -10,20 +10,50 @@ Produce a **distilled briefing** — not a transcript dump, not a vague summary.
 ## Step 1 — Gather ground truth (in parallel)
 
 Don't rely on memory alone. Gather:
+
+- `date '+%Y-%m-%d %H:%M'` — **never guess the date.** The filename and the resume ordering both depend on it.
 - `git branch --show-current`, `git log --oneline -5`, `git status -sb` (branch + ahead/behind + uncommitted).
 - The active todo list, if any.
 - Which files actually changed this session.
 
-## Step 2 — Detect the chain
+## Step 2 — Make sure `.handoffs/` exists and is excluded
 
-Look in `.handoffs/` for a prior handoff on the same workstream (matching slug). If one exists, this handoff continues the chain: increment its sequence number and reference the prior file so the trail stays walkable.
+Handoffs live in `.handoffs/` at the repo root and are **local to this clone** — notes to the next session, not something to commit.
 
-## Step 3 — Write the file
+Keep them out of git via `.git/info/exclude`, **not `.gitignore`**. `.gitignore` is tracked, so editing it drops your personal setup into everyone else's diff; `.git/info/exclude` does the same job for this clone only. Run:
 
-Write to `.handoffs/HANDOFF_<slug>_<YYYY-MM-DD>.md`, where `<slug>` is a short kebab-case name for the workstream. Create `.handoffs/` if needed (it should be gitignored — add it to the repo's `.gitignore` if it isn't already). Use this skeleton; keep each section tight:
+```bash
+cd "$(git rev-parse --show-toplevel)" && mkdir -p .handoffs
+EXCLUDE="$(git rev-parse --path-format=absolute --git-common-dir)/info/exclude"
+grep -qxF '.handoffs/' "$EXCLUDE" 2>/dev/null || echo '.handoffs/' >> "$EXCLUDE"
+```
+
+**Never edit the repo's `.gitignore` for this.**
+
+## Step 3 — Retire the previous handoff
+
+List `.handoffs/` and look for an earlier handoff on the same workstream (matching slug) whose `Superseded by:` line is still `—`. If one exists, this handoff continues that chain:
+
+- Increment its sequence number for the new file.
+- In that prior file, replace `Superseded by: —` with `Superseded by: <new filename>`. This is what stops `/ddmal:resume` from picking up a retired handoff.
+- Name it in the new file's `Continues:` line so the trail stays walkable.
+
+If no live handoff exists for this slug, this is seq 1 and `Continues:` is `—`.
+
+**Don't delete old handoffs.** They are the record of what was decided and why; superseding is enough.
+
+## Step 4 — Write the file
+
+Write to `.handoffs/HANDOFF_<slug>_<YYYY-MM-DD>_<HHMM>.md`, using the timestamp from Step 1 and a short kebab-case `<slug>` for the workstream. The time in the filename means two handoffs on one day never collide, and sorting filenames alphabetically sorts them chronologically.
+
+Use this skeleton; keep each section tight:
 
 ```
-# Handoff: <workstream> (<date>, seq N)
+# Handoff: <workstream> (seq N)
+
+Written: <YYYY-MM-DD HH:MM>
+Continues: <prior filename, or —>
+Superseded by: —
 
 ## Goal
 <One short paragraph: what we're actually trying to accomplish, and why.>
@@ -50,11 +80,12 @@ Branch: <branch> · Last commit: <short sha + subject> · Pushed: <yes/no> · Un
 <Exact commands to resume, and the files to open first.>
 ```
 
-## Step 4 — Report
+## Step 5 — Report
 
-Print the path you wrote, and tell the user a fresh session can pick it up with `/ddmal:resume`.
+Print the path you wrote, note which prior handoff you superseded (if any), and tell the user a fresh session can pick it up with `/ddmal:resume`.
 
 ## Notes
+
 - **Distill.** If a detail wouldn't change what the next session does, leave it out.
 - **Preserve decisions and dead ends** — those are exactly what a fresh session cannot reconstruct on its own.
 - Write this *before* context degrades (well before you are forced to compact), not after — a handoff written from a degraded context inherits the degradation.
