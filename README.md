@@ -19,77 +19,74 @@ The `ddmal` plugin ships six skills, all backed by the official GitHub MCP serve
 
 ## Setup (once per person)
 
-You don't need to clone this repo — `marketplace add` below fetches it for you. **Requires Claude
-Code ≥ 2.1.207** (check with `claude --version`; update if older).
+Install once from a terminal; the skills then work in every repo. Requires Claude Code ≥ 2.1.207.
+
+> Use the terminal, **not** the `/plugin` panel — the panel can't collect your token, and you get
+> skills that load fine but fail on every review.
 
 ### 1. Create a read-only GitHub token
 
-The skills read PRs, issues, and code through the GitHub MCP server, which needs a token. Create a
-**fine-grained personal access token** at
-**[github.com/settings/personal-access-tokens/new](https://github.com/settings/personal-access-tokens/new)**
-with **Read-only** access:
+A **fine-grained PAT** at
+[github.com/settings/personal-access-tokens/new](https://github.com/settings/personal-access-tokens/new):
 
-- **Resource owner:** your own GitHub account — no org approval to wait on.
-- **Repository access:** _Public repositories (read-only)_ — covers the public DDMAL repos, with no extra permissions to configure.
+- **Resource owner:** your own GitHub account
+- **Repository access:** _Public repositories (read-only)_
 
-Read-only is deliberate — reviews are posted in chat, never written back to GitHub. (Reviewing a
-_private_ repo? Set the resource owner to that repo's org/owner instead, select the repo, and grant
-**Issues, Pull requests, Contents, Metadata → Read**.)
+<sub>Private repo instead? Set the resource owner to that org, select the repo, and grant
+**Issues, Pull requests, Contents, Metadata → Read**.</sub>
 
 ### 2. Install
 
-**Default — in a Claude Code session.** In the VS Code chat panel or an interactive `claude`
-session, run:
-
-```text
-/plugin marketplace add DDMAL/devtools
-/plugin install ddmal@devtools
-```
-
-`/plugin install` pops up a prompt for your token, so it never touches your shell history.
-
-**Fallback — from a terminal,** if `/plugin` isn't available (e.g. a headless or older session).
-Read your token in first — run this line **on its own**, then paste the token and press Enter. The
-line stays blank while it waits (input is hidden), and the value never enters your shell history:
+Run this line **by itself**. It prints `Paste token:` and waits — your typing stays hidden:
 
 ```bash
-read -rs GITHUB_PAT
+printf 'Paste token: '; read -rs GITHUB_PAT; echo
 ```
 
-Then add the marketplace and install:
+Then paste the rest:
 
 ```bash
 claude plugin marketplace add DDMAL/devtools
 claude plugin install ddmal@devtools --config github_pat="$GITHUB_PAT" --scope user
+unset GITHUB_PAT
 ```
 
-Either way, Claude Code stores the token in your OS keychain (or `~/.claude/.credentials.json`),
-never in the repo. **Set it on the _first_ install** — `install` silently ignores `--config` if the
-plugin is already present, so if the server won't connect later, run
-`claude plugin uninstall ddmal@devtools` and reinstall.
+`--scope user` is what makes it work everywhere. The token goes to your OS keychain.
 
 ### 3. Verify
 
+Reload Claude Code first — in VS Code, `Cmd+Shift+P` → **Developer: Reload Window**. Sessions that
+were already open won't have the plugin.
+
+In a terminal, check the server is authenticated:
+
 ```bash
-claude mcp list      # plugin:ddmal:github → ✔ Connected
+claude mcp list
 ```
 
-Then try a real review in any session (the VS Code extension is fine):
+You want `plugin:ddmal:github … ✔ Connected`. Then, **in Claude Code** (not your shell):
 
 ```text
-/ddmal:review-pr DDMAL/CantusDB#2118
+/ddmal:review-pr DDMAL/CantusDB#2123
 ```
 
-> **If the bundled server won't connect,** add it yourself at user scope:
-> `claude mcp add --transport http github https://api.githubcopilot.com/mcp/ --header "Authorization: Bearer <your-token>" --scope user`
+### If something goes wrong
+
+| Symptom | Fix |
+| --- | --- |
+| `claude: command not found` | The VS Code extension doesn't add `claude` to your `PATH`. Install the CLI with `curl -fsSL https://claude.ai/install.sh \| bash`, then open a new terminal. |
+| Skills load but every review fails | Installed from the `/plugin` panel, so there's no token. `claude plugin uninstall ddmal@devtools`, then redo step 2. |
+| Skills don't appear at all | Relaunch Claude Code — open windows don't load a new plugin. |
+| Connected, but repos 404 | Token resource owner must be **your own account**, not the DDMAL org. |
+| `/plugin isn't available in this environment` | You don't need it. Step 2 is the terminal. |
 
 ---
 
 ## Using the skills
 
 ```text
-/ddmal:review-pr DDMAL/CantusDB#2118   # explicit owner/repo#number
-/ddmal:review-pr 2118                   # infers owner/repo from the current git remote
+/ddmal:review-pr DDMAL/CantusDB#2123   # explicit owner/repo#number
+/ddmal:review-pr 2123                   # infers owner/repo from the current git remote
 /ddmal:handoff                          # write a handoff before you run low on context
 /ddmal:resume                           # start a fresh session here to continue
 /ddmal:commit                           # draft a commit message for your staged changes
