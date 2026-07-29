@@ -37,16 +37,32 @@ Read-only is deliberate — reviews are posted in chat, never written back to Gi
 
 ### 2. Install
 
-```bash
-claude plugin marketplace add DDMAL/devtools
-claude plugin install ddmal@devtools --config github_pat=<YOUR_TOKEN> --scope user
+Add the marketplace, then install the plugin. Claude Code stores your token in your OS keychain
+(or `~/.claude/.credentials.json`), never in the repo — but **avoid typing the raw token as a
+command-line argument**, since that lands in your shell history. Two clean ways to hand it over:
+
+**Recommended — let it prompt you.** In a Claude Code session (VS Code chat panel or an interactive
+`claude`), run:
+
+```text
+/plugin marketplace add DDMAL/devtools
+/plugin install ddmal@devtools
 ```
 
-`--config` stores the token in your OS keychain (or `~/.claude/.credentials.json`) — never in a
-repo or your shell history; use `--config github_pat="$VAR"` if it's in an env var. **Set it on the
-_first_ install** — `install` ignores `--config` if the plugin already exists, so if the server
-won't connect, run `claude plugin uninstall ddmal@devtools` and install again. (Prefer a prompt?
-Run `/plugin install ddmal@devtools` inside a session.)
+`/plugin install` prompts you to paste the token, so it never touches your shell history.
+
+**Or from the terminal,** passing the token via an **env var** (not the literal token) so history
+only records the variable name:
+
+```bash
+export GITHUB_PAT=github_pat_xxx        # or keep it in ~/.bash_profile / ~/.zshrc
+claude plugin marketplace add DDMAL/devtools
+claude plugin install ddmal@devtools --config github_pat="$GITHUB_PAT" --scope user
+```
+
+**Set the token on the _first_ install** — `install` silently ignores `--config` if the plugin is
+already present, so if the server won't connect later, run `claude plugin uninstall ddmal@devtools`
+and install again.
 
 ### 3. Verify
 
