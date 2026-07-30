@@ -54,7 +54,6 @@ From the PR body and comments, extract every `#NNN` reference and every `closes/
 ## Step 3 — Check review state
 
 - `mcp__plugin_ddmal_github__pull_request_read` methods `get_reviews` + `get_review_comments` (inline threads, each with a resolved/unresolved state) + `get_comments` (the conversation).
-- **Automated reviewer present?** Flag if neither CodeRabbit nor Copilot has reviewed. (CodeRabbit is the active bot on CantusDB.)
 - **Bot / human comments addressed?** For each substantive comment, look for (a) an author reply with reasoning, (b) a subsequent commit that addresses it, or (c) an explicit "won't fix" with justification. A comment dismissed without any of these is a finding. Unresolved threads with substantive concerns are blockers.
 - **CI.** Red CI without an explanation in the PR body is a blocker.
 
@@ -129,12 +128,11 @@ Reply directly in chat — **do not** write a file, and **do not** post inline P
 - **What this PR does** — 2–3 sentences in your own words, not the author's.
 - **Linked issues** — one line each on what was actually asked.
 - **Does it fix the issue?** — yes / partially / no, with reasoning; criteria → hunks.
-- **Review state** — automated reviewer (y/n), bot comments addressed (y/partial/n + detail), human comments addressed, CI status.
+- **Review state** — bot comments addressed (y/partial/n + detail), human comments addressed, CI status.
 - **Blockers** — must-fix before merge, each with `file:line` and reasoning.
 - **Scope creep** — split out or drop, each with `file:line`.
 - **Concerns** — non-blocking but worth discussing.
 - **Nits** — tiny stuff; include if found, don't hunt for them.
-- **What's good** — explicit callouts; don't skip this, it calibrates the rest.
 - **Recommendation** — Approve / Approve with nits / Request changes / Needs discussion, with a paragraph explaining the call.
 
 ## Operating notes
