@@ -21,7 +21,7 @@ Target shape:
 ## The window
 
 - Now: !`date '+%Y-%m-%d %H:%M %Z (%A)'`
-- Default start date (04:00 → 04:00, local): !`CUT=04; if [ "$(date +%H)" -lt "$CUT" ]; then date -v-1d +%Y-%m-%d 2>/dev/null || date -d yesterday +%Y-%m-%d; else date +%Y-%m-%d; fi`
+- Default start date (04:00 → 04:00, local): !`date -v-4H +%Y-%m-%d 2>/dev/null || date -d '4 hours ago' +%Y-%m-%d`
 
 A workday runs from **04:00 to 04:00, in this computer's timezone** — never a hardcoded zone.
 Work done at 1am belongs to the day you were still working, so before 4am the default start

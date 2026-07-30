@@ -16,12 +16,14 @@ This is the opposite of `/ddmal:daily-recap`. Nothing is compressed for space. C
 ## The window
 
 - Now: !`date '+%Y-%m-%d %H:%M %Z (%A)'`
-- Default start (most recent Friday, Eastern): !`back=$(( ( $(TZ=America/New_York date +%u) + 2 ) % 7 )); [ "$back" -eq 0 ] && back=7; TZ=America/New_York date -v-"${back}"d +%Y-%m-%d 2>/dev/null || TZ=America/New_York date -d "$back days ago" +%Y-%m-%d`
-- Clones scanned: !`dirname "$(git rev-parse --show-toplevel 2>/dev/null || echo "$PWD")"`
+- Today, Eastern: !`TZ=America/New_York date '+%Y-%m-%d %A (ISO weekday %u)'`
+- This repo: !`git rev-parse --show-toplevel`
 
-The default start is **the most recent Friday at 09:00 America/New_York**, resolved above —
-**never guess the current date.** Run on a Friday, it goes back a full week rather than a few
-hours, because the point is to cover the week just worked.
+The default start is **the most recent Friday at 09:00 America/New_York**. Get it from the
+Eastern date above — go back `(weekday + 2) mod 7` days, or a full 7 if that lands on 0 —
+and **never guess the current date.** Run on a Friday, it goes back a full week rather than a
+few hours, because the point is to cover the week just worked. Repos are scanned in the parent
+folder of the repo shown above.
 
 If the user gave a date or a phrase in `$ARGUMENTS` ("since Monday", "since the 20th",
 "since 2026-07-20 14:00"), use that instead, at 09:00 unless they named a time.
@@ -37,7 +39,7 @@ State the window you settled on before you write anything, so a wrong default is
 "${CLAUDE_PLUGIN_ROOT}/scripts/worklog.sh" --since 'YYYY-MM-DD 09:00'
 ```
 
-It reports, for every repo in the folder shown above: your commits, files changed but not
+It reports, for every repo in that parent folder: your commits, files changed but not
 committed, handoff notes written in the window, and the prompts from your Claude Code
 sessions — including the work that never reached a commit.
 
