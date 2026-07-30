@@ -1,17 +1,19 @@
 ---
 name: weekly-recap
-description: Write personal markdown work notes covering everything done since last Friday 9am Eastern (or a date you name). Use when the user wants a recap of the past week or a memory aid of recent work (e.g. "what have I been working on", "write my work notes", "/ddmal:weekly-recap", "/ddmal:weekly-recap 2026-07-20"). Reads commits, uncommitted changes, handoffs, and Claude Code sessions across all local repos.
+description: Write brief personal markdown work notes — one line per task — covering everything done since last Friday 9am Eastern (or a date you name). Use when the user wants a recap of the past week or a memory aid of recent work (e.g. "what have I been working on", "write my work notes", "/ddmal:weekly-recap", "/ddmal:weekly-recap 2026-07-20"). Reads commits, uncommitted changes, handoffs, and Claude Code sessions across all local repos.
 argument-hint: "[since Monday | 2026-07-20 | 2026-07-20 14:00]"
 allowed-tools: Bash(date:*) Bash(git rev-parse:*) Bash(mkdir:*) Bash(${CLAUDE_PLUGIN_ROOT}/scripts/worklog.sh *)
 ---
 
 # Write personal work notes
 
-These notes are a **memory aid for the user, weeks from now** — after the details are gone.
-They are not a status report and nobody else reads them. Write for a reader who has forgotten
-everything: name the thing, say what changed, say why it mattered, say where it stands.
+These notes are a **memory aid for the user, weeks from now** — a jog to the memory, not an
+account of the work. Nobody else reads them. The user did the work; all they need back is the
+hook: what the thing was, and where it stands.
 
-This is the opposite of `/ddmal:daily-recap`. Nothing is compressed for space. Clarity wins.
+**One line per task.** Think of this as `/ddmal:daily-recap` stretched over a week — a few more
+lines, and the issue and PR numbers kept, but the same brevity. A whole week should fit on one
+screen. If a bullet needs a second sentence to make sense, the first sentence was the wrong one.
 
 ## The window
 
@@ -67,40 +69,57 @@ file that GitHub activity isn't included.
 
 ## Step 3 — Write the notes
 
-Group by project. Within a project, run roughly chronologically, but merge related commits
-into one bullet — one bullet per *piece of work*, never one per commit.
+One section per project, and **within a section order by size, never by date.** The biggest
+piece of work in a project goes first, the leftovers batch onto shared lines at the bottom.
+Order the projects the same way, so the repo that took the week leads the file. A heavy week is
+15-20 bullets in total; past that, the batch lines aren't working hard enough.
 
 ```markdown
 # Work notes: <Fri 24 Jul, 9:00am> to <Wed 29 Jul, 1:40pm>
 
-## <Project>
+## <Biggest project>
 
-- <What was done, what it fixes or adds, and why it was needed.>
-- <Decisions made, and the reasoning — especially where an obvious approach was rejected.>
+- <The thread that took the week — one line> (#1234, draft)
+- <The next biggest> (#1235, in review)
+- Reviewed: #1240 <three words>, #1241, #1242 — and <decision taken, one clause> (#1243)
+- Merged: <thing> (#1236), <thing> (#1237); filed #1244 <three words>, #1245 <three words>
 
 ## <Next project>
 
 - ...
 
-## Where things stand
+## Next up
 
-- <Unfinished work, and the next concrete step.>
-- <PRs waiting on review, branches with uncommitted changes, open questions.>
+- <The three or four things to pick up first, most urgent first>
 ```
+
+Size means how much of the week it took, not how many commits it produced — a two-commit fix
+that ate three days of investigation is a big thread. Where two threads are close, the one with
+a priority-high label, a colleague waiting, or users actively hitting it goes first.
+
+Those batch lines are where length goes to die: group by state and let one line carry five
+numbers. Reviews and filed issues get a few words at most, never a bullet of their own, and a
+decision can ride the end of the line it came from.
 
 Writing rules:
 
-- **Full, plain sentences.** Don't drop articles or compress into telegraph style. "Fixed the
-  siglum in the concordances export, which was serving a stale cached value" — not "Fixed
-  siglum cache concordances export".
-- **One or two lines per bullet.** Short, but complete.
-- **Keep the identifiers.** PR and issue numbers, branch names, and filenames are the point
-  here — they're how the user finds the work again.
-- **Record decisions and dead ends.** What was tried and rejected, and why, is the highest
-  value thing in the file; it's also the only part nothing else captures.
-- **Say what's unverified.** If something was written but never tested or run, say so.
-- Skip trivia. Formatting-only commits and typo fixes don't earn a bullet.
-- Don't pad. A quiet week is a short file.
+- **One line per task, and one task per line.** A bullet covers a piece of work, never a
+  commit, and never runs to a second sentence. How it was implemented, which files changed,
+  what the tests do, and why each choice was made all stay out — the user remembers those once
+  the name is in front of them.
+- **Lead with the thing, not the story.** "Stale sigla in the concordances export — the legacy
+  `Source.siglum` column is frozen (#2169, draft)" is the shape. A sentence explaining how the
+  export works is not.
+- **Fragments are fine.** An em dash beats a subordinate clause. Don't pad a line into prose.
+- **Keep the identifiers.** PR and issue numbers, plus the one branch or filename that is the
+  way back to the work. They're the whole reason the file beats a daily recap.
+- **Tense tells the truth.** Past tense only for work that merged, deployed, or landed on the
+  default branch. Draft PRs, live branches, and anything awaiting review are in flight — mark
+  them, in the same line, as `draft` or `in review`. Never write up a draft as done.
+- **A real fork in the road earns a line.** What was decided, and the one fact it turned on.
+  Not the argument, not the alternatives considered.
+- Skip trivia entirely — formatting commits, typo fixes, routine chores.
+- A quiet week is three bullets. Don't pad.
 
 **Only write what the record supports.** Where the evidence is thin (a session with prompts
 but no commits), say what was worked on and mark it as unfinished — don't infer an outcome.
