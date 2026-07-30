@@ -123,7 +123,15 @@ Opening this repo prompts you to install the **Claude Code** extension (`anthrop
 
 ## Updating
 
-No version in the manifest, so **every push is a new version** — you get the latest on your next `/plugin marketplace update` (or the background refresh). No release step.
+No version in the manifest, so **every push is a new version**. No release step — just:
+
+```bash
+claude plugin update ddmal@devtools
+```
+
+One command does both halves: it re-fetches the marketplace from GitHub _and_ reinstalls the plugin, so there's no separate `claude plugin marketplace update` beforehand. Then **restart Claude Code** — open windows keep running the copy they started with. Your token isn't touched.
+
+<sub>`claude plugin marketplace update devtools` is for a different job: refreshing the catalog so newly published plugins show up. It won't move a plugin you already have installed.</sub>
 
 ## Developing the plugin
 
