@@ -59,8 +59,12 @@ connected, call `mcp__plugin_ddmal_github__get_me`, then search with `updated:>=
 - `mcp__plugin_ddmal_github__search_pull_requests` — `author:@me`, then `reviewed-by:@me`
 - `mcp__plugin_ddmal_github__search_issues` — `commenter:@me`
 
-**If the tools aren't available, skip this step silently.** The local record alone is enough.
-Don't tell the user about missing tools unless they ask why something is absent.
+Ask for the `draft` and `state` fields on the PR searches. They are the only way to tell a
+change that shipped from one that is still being written, and Step 3 picks its tenses from
+that. A local commit says nothing about either.
+
+**If the tools aren't available, skip this step silently.** The local record alone is enough —
+but with no way to check what merged, treat unmerged work as in flight and keep the participle.
 
 ## Step 3 — Compress to 3-4 lines
 
@@ -68,9 +72,11 @@ Group by **project or theme, never by commit.** Six commits in one repo are one 
 
 Rules for each line:
 
-- **Start with a verb.** Past tense for finished work (`Fixed`, `Added`, `Reviewed`),
-  present participle for work still in flight (`Refining`, `Working on`). The tense is the
-  signal — don't flatten it for consistency.
+- **Start with a verb, and let the tense carry the truth.** Past tense (`Fixed`, `Added`,
+  `Reviewed`) belongs only to work that actually landed: merged, deployed, or pushed to the
+  repo's default branch. Work sitting on a branch, in a draft PR, or waiting on review is
+  still in flight — use the present participle (`Fixing`, `Refining`, `Working on`). A commit
+  is not a finish line.
 - **Roughly 5-9 words.** It must not wrap.
 - **Say what changed, not how.** "Fixed visual bug on source search page", not "patched CSS
   specificity in style.css".
@@ -82,8 +88,11 @@ Rules for each line:
 Order by significance, biggest first. Cap at 4 lines — if the day had more threads than that,
 fold the small ones into the nearest bullet or drop them; a fifth line is not an option.
 
-**Only claim what the record supports.** If nothing landed in a repo, "Working on X" is honest
-and "Fixed X" is not.
+**Only claim what the record supports, and never write up unfinished work as finished.** These
+lines go into a form colleagues read, so an overclaim costs more than a vague line. A day spent
+on a draft PR is "Working on X", never "Fixed X"; if nothing landed in a repo at all, say so
+with the participle. Reviews, issues, and comments *are* done once submitted — code is done
+once it's merged.
 
 ## Step 4 — Hand it over
 
