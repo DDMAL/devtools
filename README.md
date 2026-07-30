@@ -1,15 +1,12 @@
 # DDMAL devtools
 
-Lab-internal developer tooling for [Claude Code](https://code.claude.com), distributed as a
-plugin through a marketplace hosted in this repo. Install once and it works in **every** repo you
-open — no per-repo setup, and everyone pulls updates from one place.
+Lab-internal developer tooling for [Claude Code](https://code.claude.com), distributed as a plugin through a marketplace hosted in this repo.
 
-The `ddmal` plugin ships eight skills. `/ddmal:review-pr` needs the bundled GitHub MCP server;
-the recaps use it when it's there and skip it when it isn't; the rest are pure local git.
+There are eight skills in this plugin. `/ddmal:review-pr` needs the bundled GitHub MCP server.
 
 | Skill | What it does |
 | --- | --- |
-| `/ddmal:review-pr` | Critical, human-assist PR review (a second pass on top of CodeRabbit/Copilot). |
+| `/ddmal:review-pr` | Critical, human-assisted PR review. |
 | `/ddmal:handoff` | Write a session handoff to disk so a fresh session can resume cleanly. |
 | `/ddmal:resume` | Pick up from the most recent handoff. |
 | `/ddmal:commit` | Draft a Conventional Commits message (you commit and push). |
@@ -18,21 +15,15 @@ the recaps use it when it's there and skip it when it isn't; the rest are pure l
 | `/ddmal:daily-recap` | Summarize today's work as 3–4 one-line bullets to paste into Workday. |
 | `/ddmal:weekly-recap` | Personal markdown notes on everything done since last Friday 9am. |
 
-**Nothing here writes to GitHub.** The MCP server is pinned read-only (see
-[Why it can't write](#why-it-cant-write)), and the three drafting skills hand you a link or a
-command instead of acting: you click _Create_, _Submit_, or run `git commit`/`git push`
-yourself.
+**Nothing here writes to GitHub.** The MCP server is pinned read-only, and the three drafting skills hand you a link or a command.
 
 ---
 
 ## Setup (once per person)
 
-Install once from a terminal; the skills then work in every repo. Requires Claude Code ≥ 2.1.218
+Install once from a terminal. Requires Claude Code ≥ 2.1.218
 (`/ddmal:review-pr` runs in its own context and waits for the result, which needs that version;
 on 2.1.207–2.1.217 everything else works and the review comes back in the background instead).
-
-> Use the terminal, **not** the `/plugin` panel — the panel can't collect your token, and you get
-> skills that load fine but fail on every review.
 
 ### 1. Create a read-only GitHub token
 
@@ -45,22 +36,7 @@ A **fine-grained PAT** at
 <sub>Private repo instead? Set the resource owner to that org, select the repo, and grant
 **Issues, Pull requests, Contents, Metadata → Read**.</sub>
 
-#### Why it can't write
-
-Two independent limits, so neither one alone has to hold:
-
-1. **The token** is read-scoped, per the settings above.
-2. **The server** is pinned read-only in
-   [`.mcp.json`](plugins/ddmal/.mcp.json) with `X-MCP-Readonly: true`, so GitHub's MCP server
-   never even offers a write tool — no `create_pull_request`, no `merge_pull_request`, no
-   `issue_write`. `X-MCP-Toolsets` trims it further to the four toolsets the skills use.
-
-So a broader token pasted by mistake still can't push, merge, or file anything. The only write
-paths in the whole plugin are your own `git push` and your own click on GitHub's forms.
-
 ### 2. Install
-
-Run this line **by itself**. It prints `Paste token:` and waits — your typing stays hidden:
 
 ```bash
 printf 'Paste token: '; read -rs GITHUB_PAT; echo
@@ -78,20 +54,13 @@ unset GITHUB_PAT
 
 ### 3. Verify
 
-Reload Claude Code first — in VS Code, `Cmd+Shift+P` → **Developer: Reload Window**. Sessions that
-were already open won't have the plugin.
-
-In a terminal, check the server is authenticated:
+Reload Claude Code first (`Cmd+Shift+P` → **Developer: Reload Window**) — open sessions won't have the plugin. Then:
 
 ```bash
-claude mcp list
+claude mcp list   # want: plugin:ddmal:github … ✔ Connected
 ```
 
-You want `plugin:ddmal:github … ✔ Connected`. Then, **in Claude Code** (not your shell):
-
-```text
-/ddmal:review-pr DDMAL/CantusDB#2123
-```
+Then, in Claude Code: `/ddmal:review-pr DDMAL/CantusDB#2123`.
 
 ### If something goes wrong
 
@@ -121,78 +90,49 @@ You want `plugin:ddmal:github … ✔ Connected`. Then, **in Claude Code** (not 
 /ddmal:weekly-recap 2026-07-20          # …or since a date you name
 ```
 
-You don't have to type the command. Every skill also triggers from plain language — "what did
-I work on today", "hand this off and note what's left", "review 2123" — so the slash form is
-just the explicit way to ask.
+Every skill also triggers from plain language — "what did I work on today", "review 2123" — so the slash form is just the explicit way to ask.
 
-`/ddmal:draft-pr` needs your branch already on the remote, because GitHub computes the compare
-diff server-side. If it isn't, the skill stops and hands you the `git push -u origin <branch>`
-command rather than pushing for you.
+`/ddmal:draft-pr` needs your branch pushed first (GitHub computes the diff server-side); if not, it hands you the `git push` command instead of pushing.
 
-### Where the work summaries come from
+### Where the recaps come from
 
-`/ddmal:daily-recap` and `/ddmal:weekly-recap` both run
-[`plugins/ddmal/scripts/worklog.sh`](plugins/ddmal/scripts/worklog.sh), which scans **every
-clone in the folder holding this repo** — your commits, files you changed but haven't
-committed, `.handoffs/` notes, and your Claude Code session history — over a time window. It
-reads only; it prints a plain-text record and the skill does the interpreting.
+Both recaps run [`worklog.sh`](plugins/ddmal/scripts/worklog.sh), which reads — never writes — every clone beside this repo: commits, uncommitted changes, `.handoffs/`, and Claude Code session history over a window.
 
-- **`/ddmal:daily-recap` runs 4am → 4am in your computer's timezone**, so a session that goes
-  past midnight still lands on the day you were working. Name a start yourself to override it.
-- `/ddmal:weekly-recap` anchors to **Eastern** instead, so a week means the same span for
-  everyone. Set `WORKLOG_TZ` to change that.
-- Repos somewhere else? Set `WORKLOG_ROOTS` (colon-separated) or pass `--roots DIR`.
-- `/ddmal:weekly-recap` writes to `~/worknotes/` (override with `$WORKNOTES_DIR`) — outside
-  every repo, since the notes are personal and span all of them.
+- **`daily-recap`** runs 4am → 4am **local**, so past-midnight work lands on the right day.
+- **`weekly-recap`** anchors to **Eastern** (`WORKLOG_TZ` to change) and saves to `~/worknotes/` (`$WORKNOTES_DIR`), outside every repo.
+- Repos elsewhere? `WORKLOG_ROOTS` (colon-separated) or `--roots DIR`.
 
-> **What it reads.** Commits and dirty files come only from the clones above, but **Claude Code
-> session history is read for every project on your machine** — that's what catches work which
-> never reached a commit. Unrelated or personal sessions can therefore surface in a recap, and
-> `/ddmal:weekly-recap` saves its output to a file. Narrow the scan with `WORKLOG_ROOTS` or
-> `--roots DIR` if that matters to you, and skim the file before sharing it.
+> **Heads up:** session history is read for _every_ project on your machine, not just these clones — that's what catches uncommitted work, but unrelated sessions can surface in a recap (and `weekly-recap` saves to a file). Narrow with `--roots` and skim before sharing.
 
 ### How review-pr adapts per repo
 
-The review engine is stack-agnostic; it picks up each repo's own gotchas from the repo being
-reviewed, in two places:
+The engine is stack-agnostic; per-repo rules come from the repo being reviewed:
 
-- **`CLAUDE.md`** (repo root) — the primary source. `/ddmal:review-pr` treats its
-  "never / always / must / don't" statements as review gates. Most repos already have one, so
-  there's usually nothing to set up.
-- **`REVIEW.md`** (repo root, optional) — a short list of extra review-time gates. See
-  [`examples/REVIEW.cantusdb.md`](examples/REVIEW.cantusdb.md) for the shape. This is the same
-  filename Anthropic's managed Code Review reads, so one rubric serves both reviewers.
+- **`CLAUDE.md`** — its "never / always / must" lines become review gates. Most repos already have one.
+- **`REVIEW.md`** (optional) — extra review-time gates; see [`examples/REVIEW.cantusdb.md`](examples/REVIEW.cantusdb.md). Same file Anthropic's managed Code Review reads, so one rubric serves both.
 
-A repo with neither still gets a solid generic review.
+Neither? You still get a solid generic review.
 
 ---
 
-## Recommended VS Code extensions
+## VS Code extensions
 
-Opening this repo prompts VS Code to install these (see
-[`.vscode/extensions.json`](.vscode/extensions.json)):
-
-- **Claude Code** (`anthropic.claude-code`) — the extension itself.
-
-Stack-specific extensions belong in each project's own `.vscode/extensions.json`, not here.
+Opening this repo prompts you to install the **Claude Code** extension (`anthropic.claude-code`); see [`.vscode/extensions.json`](.vscode/extensions.json). Stack-specific extensions belong in each project's own file, not here.
 
 ---
 
 ## Updating
 
-`version` is intentionally omitted from the manifest, so **every push to this repo is a new
-version** — members get the latest on their next `/plugin marketplace update` (or the background
-refresh). No release step to remember.
+No version in the manifest, so **every push is a new version** — you get the latest on your next `/plugin marketplace update` (or the background refresh). No release step.
 
 ## Developing the plugin
 
-You only need to clone to work _on_ the plugin — using it is handled by `marketplace add` above.
+Clone only to work _on_ the plugin — using it is handled by `marketplace add` above.
 
 ```text
-claude --plugin-dir ./plugins/ddmal      # load the plugin from a local clone
-/reload-plugins                          # after editing non-skill files (mcp, manifest)
+claude --plugin-dir ./plugins/ddmal      # load from a local clone
+/reload-plugins                          # after editing mcp/manifest (non-skill files)
 claude plugin validate .                 # before pushing
 ```
 
-Skills are portable engines; project-specific rules come from the repo being reviewed — its
-`CLAUDE.md` first, plus an optional `REVIEW.md`. Keep it that way.
+Skills are portable engines; project rules come from the repo being reviewed. Keep it that way.
