@@ -16,7 +16,7 @@ Produce a **distilled briefing** — not a transcript dump, not a vague summary.
 - Recent commits: !`git log --oneline -5`
 - Working tree: !`git status --short`
 - Existing handoffs: !`ls -1 "$(git rev-parse --show-toplevel)/.handoffs" 2>/dev/null || echo "(none yet)"`
-- Their supersede state: !`grep -H 'Superseded by:' "$(git rev-parse --show-toplevel)"/.handoffs/*.md 2>/dev/null || echo "(none)"`
+- Their supersede state: !`grep -rH --include='*.md' 'Superseded by:' "$(git rev-parse --show-toplevel)/.handoffs" 2>/dev/null || echo "(none)"`
 
 **Never guess the date** — the filename and the resume ordering both depend on it, and it is resolved above. Add to this only what the facts above don't cover: which files you actually changed this session, and the active todo list if there is one.
 
