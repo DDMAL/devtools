@@ -14,7 +14,7 @@ allowed-tools: Bash(git branch:*) Bash(git log:*) Bash(git status:*) Bash(git re
 - Last commit: !`git log --oneline -1`
 - Working tree: !`git status --short`
 - Handoffs: !`ls -1 "$(git rev-parse --show-toplevel)/.handoffs" 2>/dev/null || echo "(no .handoffs directory)"`
-- Their supersede state: !`grep -H 'Superseded by:' "$(git rev-parse --show-toplevel)"/.handoffs/*.md 2>/dev/null || echo "(none)"`
+- Their supersede state: !`grep -rH --include='*.md' 'Superseded by:' "$(git rev-parse --show-toplevel)/.handoffs" 2>/dev/null || echo "(none)"`
 
 ## Step 1 — Find the handoff
 
